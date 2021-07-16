@@ -29,7 +29,9 @@ public class Line: Hashable {
         } else {
             let point = Point(mode: mode, touch: touch, in: view)
             self.points.append(point)
-            if let updateIndex = touch.estimationUpdateIndex, !touch.estimatedPropertiesExpectingUpdates.isEmpty, mode == .standard {
+
+            let canUpdate = !touch.estimatedPropertiesExpectingUpdates.isEmpty && mode == .standard
+            if let updateIndex = touch.estimationUpdateIndex, canUpdate {
                 self.awaitingUpdates[updateIndex] = point
             } else {
                 point.completed = true
@@ -49,10 +51,9 @@ public class Line: Hashable {
 
     func finish(touch: UITouch) {
         self.inProgress = false
-        if
-            let updateIndex = touch.estimationUpdateIndex,
-            let point = self.awaitingUpdates[updateIndex],
-            touch.estimatedPropertiesExpectingUpdates.isEmpty
+        if let updateIndex = touch.estimationUpdateIndex,
+           let point = self.awaitingUpdates[updateIndex],
+           touch.estimatedPropertiesExpectingUpdates.isEmpty
         {
             self.awaitingUpdates[updateIndex] = nil
             point.completed = true
