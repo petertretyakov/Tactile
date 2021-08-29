@@ -15,20 +15,18 @@ public class TouchView: UIView {
         autoreleaseFrequency: .workItem,
         target: nil
     )
-    private var activeLines: [UITouch: Line] = [:]
+    private var activeLines: [UITouch: TouchLine] = [:]
 
     public weak var delegate: TouchDelegate?
     public weak var destination: UIView?
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
-
         self.setup()
     }
 
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
-
         self.setup()
     }
 
@@ -100,7 +98,7 @@ public class TouchView: UIView {
 
     public override func touchesEstimatedPropertiesUpdated(_ touches: Set<UITouch>) {
         self.queue.sync {
-            var lines: [Line] = []
+            var lines: [TouchLine] = []
             for touch in touches {
                 guard let line = self.activeLines[touch] else { continue }
 
@@ -130,19 +128,19 @@ public class TouchView: UIView {
         }
     }
 
-    private func startLines(touches: Set<UITouch>, event: UIEvent?) -> [Line] {
-        var lines: [Line] = []
+    private func startLines(touches: Set<UITouch>, event: UIEvent?) -> [TouchLine] {
+        var lines: [TouchLine] = []
         for touch in touches {
-            let line = Line()
-            line.add(touch: touch, in: destination, mode: .standard)
+            let line = TouchLine()
+            line.add(touch: touch, in: self.destination, mode: .standard)
             self.activeLines[touch] = line
             lines.append(line)
         }
         return lines
     }
 
-    private func updateLines(touches: Set<UITouch>, event: UIEvent?, finish: Bool) -> [Line] {
-        var lines: [Line] = []
+    private func updateLines(touches: Set<UITouch>, event: UIEvent?, finish: Bool) -> [TouchLine] {
+        var lines: [TouchLine] = []
         for touch in touches {
             guard let line = self.activeLines[touch] else { continue }
 

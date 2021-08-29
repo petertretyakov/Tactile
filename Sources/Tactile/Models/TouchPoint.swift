@@ -1,13 +1,14 @@
 //
-//  Point.swift
+//  TouchPoint.swift
 //  Tactile
 //
 //  Created by Peter Tretyakov on 04.02.2021.
 //
 
+import Foundation
 import UIKit
 
-public class Point: Hashable {
+public class TouchPoint: Identifiable, Hashable {
     public let id: UUID
 
     public let device: Device
@@ -54,7 +55,7 @@ public class Point: Hashable {
 
         switch device {
         case .finger:
-            self.force = max(0.25, min(touch.majorRadius / 100, 1))
+            self.force = max(0.25, min(touch.majorRadius / 100.0, 1.0))
         case .pencil:
             self.force = max(0.025, touch.force / touch.maximumPossibleForce)
         }
@@ -66,13 +67,13 @@ public class Point: Hashable {
         self.azimuth = touch.azimuthAngle(in: view)
         switch device {
         case .finger:
-            self.force = max(0.025, min(touch.majorRadius / 100, 1))
+            self.force = max(0.025, min(touch.majorRadius / 100.0, 1.0))
         case .pencil:
             self.force = max(0.025, touch.force / touch.maximumPossibleForce)
         }
     }
 
-    public static func == (lhs: Point, rhs: Point) -> Bool {
+    public static func == (lhs: TouchPoint, rhs: TouchPoint) -> Bool {
         lhs.id == rhs.id
     }
 

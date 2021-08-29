@@ -1,3 +1,3 @@
 # Tactile
 
-A description of this package.
+Tactile is a simple wrapper around `UITouch` API.

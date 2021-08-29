@@ -10,15 +10,11 @@ let package = Package(
     products: [
         .library(
             name: "Tactile",
-            targets: ["Tactile"]),
+            targets: ["Tactile"]
+        ),
     ],
     dependencies: [],
     targets: [
-        .target(
-            name: "Tactile",
-            dependencies: []),
-        .testTarget(
-            name: "TactileTests",
-            dependencies: ["Tactile"]),
+        .target(name: "Tactile")
     ]
 )
