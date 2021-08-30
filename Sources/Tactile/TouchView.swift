@@ -8,13 +8,6 @@
 import UIKit
 
 public class TouchView: UIView {
-    private let queue = DispatchQueue(
-        label: "com.petertretyakov.Tactile.TouchQueue",
-        qos: .userInteractive,
-        attributes: [],
-        autoreleaseFrequency: .workItem,
-        target: nil
-    )
     private var activeLines: [UITouch: TouchLine] = [:]
 
     public weak var delegate: TouchDelegate?
@@ -35,96 +28,70 @@ public class TouchView: UIView {
     }
 
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.queue.sync {
-            let lines = self.startLines(touches: touches, event: event)
-            if !lines.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.linesCreated(lines)
-                }
-            }
+        let lines = self.startLines(touches: touches, event: event)
+        if !lines.isEmpty {
+            self.delegate?.linesCreated(lines)
         }
     }
 
     public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.queue.sync {
-            let lines = self.updateLines(touches: touches, event: event, finish: false)
-            if !lines.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.linesUpdated(lines)
-                }
-            }
+        let lines = self.updateLines(touches: touches, event: event, finish: false)
+        if !lines.isEmpty {
+            self.delegate?.linesUpdated(lines)
         }
     }
 
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.queue.sync {
-            let lines = self.updateLines(touches: touches, event: event, finish: true)
+        let lines = self.updateLines(touches: touches, event: event, finish: true)
 
-            let updated = lines.filter { !$0.finished }
-            if !updated.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.linesUpdated(updated)
-                }
-            }
+        let updated = lines.filter { !$0.isFinished }
+        if !updated.isEmpty {
+            self.delegate?.linesUpdated(updated)
+        }
 
-            let finished = lines.filter { $0.finished }
-            if !finished.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.linesFinished(finished)
-                }
-            }
+        let finished = lines.filter { $0.isFinished }
+        if !finished.isEmpty {
+                self.delegate?.linesFinished(finished)
         }
     }
 
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.queue.sync {
-            let lines = self.updateLines(touches: touches, event: event, finish: true)
+        let lines = self.updateLines(touches: touches, event: event, finish: true)
 
-            let updated = lines.filter { !$0.finished }
-            if !updated.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.linesUpdated(updated)
-                }
-            }
+        let updated = lines.filter { !$0.isFinished }
+        if !updated.isEmpty {
+            self.delegate?.linesUpdated(updated)
+        }
 
-            let finished = lines.filter { $0.finished }
-            if !finished.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.linesCancelled(lines)
-                }
-            }
+        let finished = lines.filter { $0.isFinished }
+        if !finished.isEmpty {
+            self.delegate?.linesCancelled(lines)
         }
     }
 
     public override func touchesEstimatedPropertiesUpdated(_ touches: Set<UITouch>) {
-        self.queue.sync {
-            var lines: [TouchLine] = []
-            for touch in touches {
-                guard let line = self.activeLines[touch] else { continue }
+        var lines: [TouchLine] = []
+        for touch in touches {
+            guard let line = self.activeLines[touch] else { continue }
 
-                line.update(touch: touch, in: self.destination)
-                lines.append(line)
+            line.update(touch: touch, in: self.destination)
+            lines.append(line)
 
-                let properPhase = [.ended, .cancelled].contains(touch.phase)
-                let wontUpdate = touch.estimatedPropertiesExpectingUpdates.isEmpty
-                if (properPhase && wontUpdate) || line.finished {
-                    self.activeLines[touch] = nil
-                }
+            let properPhase = [.ended, .cancelled].contains(touch.phase)
+            let wontUpdate = touch.estimatedPropertiesExpectingUpdates.isEmpty
+            if (properPhase && wontUpdate) || line.isFinished {
+                self.activeLines[touch] = nil
             }
+        }
 
-            let updated = lines.filter { !$0.finished }
-            if !updated.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.linesUpdated(updated)
-                }
-            }
+        let updated = lines.filter { !$0.isFinished }
+        if !updated.isEmpty {
+            self.delegate?.linesUpdated(updated)
+        }
 
-            let finished = lines.filter { $0.finished }
-            if !finished.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.linesFinished(finished)
-                }
-            }
+        let finished = lines.filter { $0.isFinished }
+        if !finished.isEmpty {
+            self.delegate?.linesFinished(finished)
         }
     }
 
@@ -132,7 +99,7 @@ public class TouchView: UIView {
         var lines: [TouchLine] = []
         for touch in touches {
             let line = TouchLine()
-            line.add(touch: touch, in: self.destination, mode: .standard)
+            line.add(touch: touch, isPredicted: false, view: self.destination)
             self.activeLines[touch] = line
             lines.append(line)
         }
@@ -147,18 +114,18 @@ public class TouchView: UIView {
             line.cleanPredicted()
 
             (event?.coalescedTouches(for: touch) ?? [touch]).forEach {
-                line.add(touch: $0, in: self.destination, mode: .standard)
+                line.add(touch: $0, isPredicted: false, view: self.destination)
             }
 
             event?.predictedTouches(for: touch)?.forEach {
-                line.add(touch: $0, in: self.destination, mode: .predicted)
+                line.add(touch: $0, isPredicted: true, view: self.destination)
             }
 
             if finish {
                 line.finish(touch: touch)
             }
 
-            if finish && line.finished {
+            if finish && line.isFinished {
                 self.activeLines[touch] = nil
             }
 
